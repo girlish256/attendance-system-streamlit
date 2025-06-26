@@ -99,17 +99,11 @@ elif menu == "View Summary":
         # Calculate percentage
         df["Total"] = df["Present"] + df["Absent"]
         df["% Attendance"] = (df["Present"] / df["Total"]) * 100
-        df.fillna(0, inplace=True)  # Handle division by zero
+        df.fillna(0, inplace=True)
 
+        # Show table and graph
         st.dataframe(df[["Student", "Present", "Absent", "% Attendance"]])
-
-        # Plot bar chart with attendance %
         st.bar_chart(df.set_index("Student")[["% Attendance"]])
     else:
         st.info("No attendance records to summarize yet.")
 
-
-        st.dataframe(df)
-        st.bar_chart(df.set_index("Student"))
-    else:
-        st.info("No attendance records to summarize yet.")
