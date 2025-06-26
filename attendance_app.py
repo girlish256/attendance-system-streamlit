@@ -1,5 +1,6 @@
 import streamlit as st
 import json
+import pandas as pd
 from datetime import datetime
 
 DATA_FILE = "attendance_data.json"
@@ -50,8 +51,10 @@ def generate_summary(data):
         summary[student] = {"Present": p, "Absent": a}
     return summary
 
-# --- UI Layout ---
+# --- Streamlit UI ---
+st.set_page_config(page_title="Student Attendance", layout="centered")
 st.title("📘 Student Attendance System")
+
 menu = st.sidebar.radio("Menu", ["Add Student", "Mark Attendance", "View Summary", "Delete Student"])
 data = load_data()
 
@@ -84,21 +87,16 @@ elif menu == "Mark Attendance":
         st.warning("Please add students first.")
 
 # View Summary
-import pandas as pd
-
 elif menu == "View Summary":
     st.header("📊 Attendance Summary")
     summary = generate_summary(data)
 
     if summary:
-        # Convert summary to DataFrame
         df = pd.DataFrame.from_dict(summary, orient='index')
         df.index.name = "Student"
         df.reset_index(inplace=True)
 
-        # Display table and bar chart
         st.dataframe(df)
         st.bar_chart(df.set_index("Student"))
     else:
         st.info("No attendance records to summarize yet.")
-
