@@ -84,7 +84,21 @@ elif menu == "Mark Attendance":
         st.warning("Please add students first.")
 
 # View Summary
+import pandas as pd
+
 elif menu == "View Summary":
     st.header("📊 Attendance Summary")
     summary = generate_summary(data)
-    st.table(summary)
+
+    if summary:
+        # Convert summary to DataFrame
+        df = pd.DataFrame.from_dict(summary, orient='index')
+        df.index.name = "Student"
+        df.reset_index(inplace=True)
+
+        # Display table and bar chart
+        st.dataframe(df)
+        st.bar_chart(df.set_index("Student"))
+    else:
+        st.info("No attendance records to summarize yet.")
+
