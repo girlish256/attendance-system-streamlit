@@ -4,7 +4,7 @@ from datetime import datetime
 
 DATA_FILE = "attendance_data.json"
 
-# Defined Funtiones for the system
+# --- Utility Functions ---
 def load_data():
     try:
         with open(DATA_FILE, "r") as f:
@@ -26,12 +26,19 @@ def add_student(data, name):
     else:
         st.error("Please enter a valid name.")
 
-def mark_attendance(data, name, status):
+def delete_student(data, name):
     if name in data:
-        today = datetime.today().strftime("%Y-%m-%d")
-        data[name][today] = status
+        del data[name]
         save_data(data)
-        st.success(f"Marked {status} for {name} on {today}.")
+        st.success(f"Student '{name}' deleted.")
+    else:
+        st.error("Student not found.")
+
+def mark_attendance(data, name, status, date_str):
+    if name in data:
+        data[name][date_str] = status
+        save_data(data)
+        st.success(f"Marked {status} for {name} on {date_str}.")
     else:
         st.error("Student not found!")
 
@@ -43,26 +50,40 @@ def generate_summary(data):
         summary[student] = {"Present": p, "Absent": a}
     return summary
 
-# UI from here
+# --- UI Layout ---
 st.title("📘 Student Attendance System")
-
-menu = st.sidebar.radio("Menu", ["Add Student", "Mark Attendance", "View Summary"])
+menu = st.sidebar.radio("Menu", ["Add Student", "Mark Attendance", "View Summary", "Delete Student"])
 data = load_data()
 
+# Add Student
 if menu == "Add Student":
     name = st.text_input("Enter new student name")
-    if st.button("Add"):
+    if st.button("Add Student"):
         add_student(data, name)
 
+# Delete Student
+elif menu == "Delete Student":
+    if data:
+        student = st.selectbox("Select student to delete", list(data.keys()))
+        if st.button("Delete"):
+            delete_student(data, student)
+    else:
+        st.warning("No students to delete.")
+
+# Mark Attendance
 elif menu == "Mark Attendance":
     if data:
         student = st.selectbox("Select student", list(data.keys()))
-        status = st.radio("Status", ["P", "A"])
-        if st.button("Mark"):
-            mark_attendance(data, student, status)
-    else:
-        st.warning("No students found. Please add students first.")
+        status = st.radio("Select status", ["P", "A"])
+        selected_date = st.date_input("Select date", datetime.today())
+        date_str = selected_date.strftime("%Y-%m-%d")
 
+        if st.button("Mark Attendance"):
+            mark_attendance(data, student, status, date_str)
+    else:
+        st.warning("Please add students first.")
+
+# View Summary
 elif menu == "View Summary":
     st.header("📊 Attendance Summary")
     summary = generate_summary(data)
