@@ -89,6 +89,9 @@ elif menu == "Mark Attendance":
         st.warning("Please add students first.")
 
 # View Summary
+import plotly.graph_objects as go
+from collections import defaultdict
+
 elif menu == "View Summary":
     st.header("📊 Attendance Summary")
     summary = generate_summary(data)
@@ -140,3 +143,4 @@ elif menu == "View Summary":
 
     else:
         st.info("No attendance records to summarize yet.")
+
