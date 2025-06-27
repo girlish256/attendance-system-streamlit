@@ -2,6 +2,8 @@ import streamlit as st
 import json
 import pandas as pd
 from datetime import datetime
+import plotly.graph_objects as go
+from collections import defaultdict
 
 DATA_FILE = "attendance_data.json"
 
@@ -101,9 +103,40 @@ elif menu == "View Summary":
         df["% Attendance"] = (df["Present"] / df["Total"]) * 100
         df.fillna(0, inplace=True)
 
-        # Show table and graph
+        # --- Display Table ---
         st.dataframe(df[["Student", "Present", "Absent", "% Attendance"]])
-        st.bar_chart(df.set_index("Student")[["% Attendance"]])
+
+        # --- Plot 1: % Attendance Bar Chart with Colors ---
+        fig1 = go.Figure()
+        fig1.add_trace(go.Bar(x=df["Student"], y=df["% Attendance"], name='% Attendance',
+                              marker_color=df["% Attendance"], text=df["% Attendance"].round(1), textposition='auto'))
+        fig1.update_layout(title="📊 Percentage Attendance per Student",
+                           yaxis_title="% Attendance", xaxis_title="Student",
+                           height=400)
+        st.plotly_chart(fig1, use_container_width=True)
+
+        # --- Plot 2: Line Chart (P/A vs Date) ---
+        daily_counts = defaultdict(lambda: {'P': 0, 'A': 0})
+        for records in data.values():
+            for date, status in records.items():
+                daily_counts[date][status] += 1
+
+        daily_df = pd.DataFrame([
+            {"Date": d, "Present": v["P"], "Absent": v["A"]}
+            for d, v in sorted(daily_counts.items())
+        ])
+        daily_df["Date"] = pd.to_datetime(daily_df["Date"])
+
+        fig2 = go.Figure()
+        fig2.add_trace(go.Scatter(x=daily_df["Date"], y=daily_df["Present"],
+                                  mode='lines+markers', name='Present', line=dict(color='green')))
+        fig2.add_trace(go.Scatter(x=daily_df["Date"], y=daily_df["Absent"],
+                                  mode='lines+markers', name='Absent', line=dict(color='red')))
+
+        fig2.update_layout(title="📈 Daily Attendance Trend",
+                           xaxis_title="Date", yaxis_title="Student Count",
+                           height=450)
+        st.plotly_chart(fig2, use_container_width=True)
+
     else:
         st.info("No attendance records to summarize yet.")
-
