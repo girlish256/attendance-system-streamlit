@@ -1,13 +1,13 @@
 import streamlit as st
 import json
 import pandas as pd
-from datetime import datetime
 import plotly.graph_objects as go
+from datetime import datetime
 from collections import defaultdict
 
 DATA_FILE = "attendance_data.json"
 
-# --- Utility Functions ---
+# Utility Functions
 def load_data():
     try:
         with open(DATA_FILE, "r") as f:
@@ -53,20 +53,18 @@ def generate_summary(data):
         summary[student] = {"Present": p, "Absent": a}
     return summary
 
-# --- Streamlit UI ---
+# Streamlit UI
 st.set_page_config(page_title="Student Attendance", layout="centered")
 st.title("📘 Student Attendance System")
 
 menu = st.sidebar.radio("Menu", ["Add Student", "Mark Attendance", "View Summary", "Delete Student"])
 data = load_data()
 
-# Add Student
 if menu == "Add Student":
     name = st.text_input("Enter new student name")
     if st.button("Add Student"):
         add_student(data, name)
 
-# Delete Student
 elif menu == "Delete Student":
     if data:
         student = st.selectbox("Select student to delete", list(data.keys()))
@@ -75,7 +73,6 @@ elif menu == "Delete Student":
     else:
         st.warning("No students to delete.")
 
-# Mark Attendance
 elif menu == "Mark Attendance":
     if data:
         student = st.selectbox("Select student", list(data.keys()))
@@ -88,10 +85,6 @@ elif menu == "Mark Attendance":
     else:
         st.warning("Please add students first.")
 
-# View Summary
-import plotly.graph_objects as go
-from collections import defaultdict
-
 elif menu == "View Summary":
     st.header("📊 Attendance Summary")
     summary = generate_summary(data)
@@ -101,24 +94,32 @@ elif menu == "View Summary":
         df.index.name = "Student"
         df.reset_index(inplace=True)
 
-        # Calculate percentage
+        # Calculate attendance percentage
         df["Total"] = df["Present"] + df["Absent"]
         df["% Attendance"] = (df["Present"] / df["Total"]) * 100
         df.fillna(0, inplace=True)
 
-        # --- Display Table ---
+        # Display table
         st.dataframe(df[["Student", "Present", "Absent", "% Attendance"]])
 
-        # --- Plot 1: % Attendance Bar Chart with Colors ---
+        # Bar Chart with different colors
         fig1 = go.Figure()
-        fig1.add_trace(go.Bar(x=df["Student"], y=df["% Attendance"], name='% Attendance',
-                              marker_color=df["% Attendance"], text=df["% Attendance"].round(1), textposition='auto'))
-        fig1.update_layout(title="📊 Percentage Attendance per Student",
-                           yaxis_title="% Attendance", xaxis_title="Student",
-                           height=400)
+        fig1.add_trace(go.Bar(
+            x=df["Student"],
+            y=df["% Attendance"],
+            marker_color=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd'] * len(df),
+            text=df["% Attendance"].round(1),
+            textposition='auto'
+        ))
+        fig1.update_layout(
+            title="📊 Percentage Attendance per Student",
+            yaxis_title="% Attendance",
+            xaxis_title="Student",
+            yaxis=dict(range=[0, 100])
+        )
         st.plotly_chart(fig1, use_container_width=True)
 
-        # --- Plot 2: Line Chart (P/A vs Date) ---
+        # Line Chart (Present vs Absent by Date)
         daily_counts = defaultdict(lambda: {'P': 0, 'A': 0})
         for records in data.values():
             for date, status in records.items():
@@ -131,14 +132,20 @@ elif menu == "View Summary":
         daily_df["Date"] = pd.to_datetime(daily_df["Date"])
 
         fig2 = go.Figure()
-        fig2.add_trace(go.Scatter(x=daily_df["Date"], y=daily_df["Present"],
-                                  mode='lines+markers', name='Present', line=dict(color='green')))
-        fig2.add_trace(go.Scatter(x=daily_df["Date"], y=daily_df["Absent"],
-                                  mode='lines+markers', name='Absent', line=dict(color='red')))
-
-        fig2.update_layout(title="📈 Daily Attendance Trend",
-                           xaxis_title="Date", yaxis_title="Student Count",
-                           height=450)
+        fig2.add_trace(go.Scatter(
+            x=daily_df["Date"], y=daily_df["Present"],
+            mode='lines+markers', name='Present', line=dict(color='green')
+        ))
+        fig2.add_trace(go.Scatter(
+            x=daily_df["Date"], y=daily_df["Absent"],
+            mode='lines+markers', name='Absent', line=dict(color='red')
+        ))
+        fig2.update_layout(
+            title="📈 Daily Attendance (Present vs Absent)",
+            xaxis_title="Date",
+            yaxis_title="Count",
+            height=450
+        )
         st.plotly_chart(fig2, use_container_width=True)
 
     else:
